@@ -1,0 +1,62 @@
+KARTOTEKA PARAFIALNA PRZYBORÓW - WERSJA 3.0
+===========================================
+
+Data wydania: 10 stycznia 2026
+
+NOWE FUNKCJE:
+-------------
+✓ Obsługa dat urodzenia 99/99/9999 jako "data nieznana"
+  - Osoby z taką datą są liczone w statystykach
+  - Wyświetlane jest ostrzeżenie o nieznanej dacie
+  - Wiek jest automatycznie obliczany jako mediana ze statystyk
+
+✓ Dynamiczny wiek domyślny
+  - Zamiast stałego wieku 50 lat, program używa mediany wieku z analizowanych danych
+  - Mediana jest obliczana tylko na podstawie osób z prawidłowymi datami urodzenia
+  - System dwuetapowy zapewnia spójność - wszystkie osoby z 99/99/9999 dostają ten sam wiek
+
+✓ Ulepszona sekcja mediany w wynikach
+  - Sekcja mediany przeniesiona na koniec raportu (po wszystkich szczegółach)
+  - Pokazuje liczbę osób z nieznanymi datami urodzenia
+  - Wyświetla ostateczną wartość mediany użytą w obliczeniach
+
+✓ Ulepszona funkcja wyszukiwania
+  - Klawiąsz Enter uruchamia wyszukiwanie
+  - Poprzednie wyniki wyszukiwania są automatycznie czyszczone
+  - Wyniki pojawiają się po podsumowaniu, przed jubileuszami
+
+✓ Poprawione zapisywanie pozycji okna
+  - Okno otwiera się dokładnie tam gdzie zostało zamknięte
+  - Osobno zapisywany stan maksymalizacji okna
+  - Synchronizacja z menedżerem okien Windows
+
+POPRAWKI BŁĘDÓW:
+---------------
+✓ Naprawiono błąd z niekonsystentną medianą dla osób z 99/99/9999
+✓ Poprawiono pozycjonowanie okna przy ponownym uruchomieniu
+✓ Usunięto błędy indentacji w kodzie wyszukiwania
+
+ZMIANY TECHNICZNE:
+-----------------
+- Python 3.13.2
+- PyInstaller 6.12.0
+- Pillow 12.1.0
+- NumPy z pełnym zestawem zależności (collect_all)
+- Dwuetapowy system obliczania mediany
+- Ulepszone zarządzanie geometrią okna
+
+INSTALACJA:
+----------
+1. Rozpakuj archiwum do dowolnego folderu
+2. Uruchom Kartoteka.exe lub Uruchom.bat
+3. Wybierz folder z plikami Excel
+
+WYMAGANIA:
+---------
+- Windows 10/11 (64-bit)
+- Brak konieczności instalacji Pythona
+- Wszystkie biblioteki dołączone w folderze _internal
+
+WSPARCIE:
+--------
+W razie problemów sprawdź plik kartoteka_errors.log
