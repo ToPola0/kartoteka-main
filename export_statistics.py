@@ -153,16 +153,16 @@ def export_all_results_to_excel(found_people, statistics_obj, jubilees_found=Non
             # Arkusz 1: Znalezione osoby - WSZYSTKIE POLA
             if found_people:
                 people_data = []
+                from data_processing import format_person_name
                 for person in found_people:
-                    imie = person.get("imie", "")
-                    nazwisko = person.get("nazwisko", "")
+                    imie = format_person_name(person.get("imie", ""))
+                    nazwisko = format_person_name(person.get("nazwisko", ""))
                     adres = person.get("adres", "")
                     old_address = person.get("old_address", "")
                     wiek = person.get("wiek", "")
                     plec = "Kobieta" if person.get("plec", "") == "K" else "Mężczyzna" if person.get("plec", "") == "M" else ""
                     plik = person.get("file", "")
                     file_path = person.get("file_path", "")
-                    
                     people_data.append([imie, nazwisko, adres, old_address, wiek, plec, plik, file_path])
                 
                 df_people = pd.DataFrame(people_data, columns=[
