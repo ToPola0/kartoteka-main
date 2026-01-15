@@ -6,38 +6,38 @@ from collections import defaultdict
 
 
 class Statistics:
-        def get_family_age_ranges(self, found_people):
-            """Zwraca zakres wieku (min/max) dla każdej kategorii rodzin (arkuszy)."""
-            # Założenie: found_people zawiera 'file_path' i 'wiek' dla każdej osoby
-            from collections import defaultdict
-            family_ages = defaultdict(list)
-            for person in found_people:
-                fp = person.get('file_path')
-                wiek = person.get('wiek')
-                if fp and wiek is not None:
-                    try:
-                        family_ages[fp].append(int(wiek))
-                    except Exception:
-                        pass
-            # Podział na kategorie
-            ranges = {1: [], 2: [], 3: [], 4: []}
-            for ages in family_ages.values():
-                size = len(ages)
-                if size == 1:
-                    ranges[1].append((min(ages), max(ages)))
-                elif size == 2:
-                    ranges[2].append((min(ages), max(ages)))
-                elif 3 <= size <= 4:
-                    ranges[3].append((min(ages), max(ages)))
-                elif size >= 5:
-                    ranges[4].append((min(ages), max(ages)))
-            # Zwróć min/max dla każdej kategorii
-            def minmax(lst):
-                if not lst:
-                    return None, None
-                mins = [x[0] for x in lst]
-                maxs = [x[1] for x in lst]
-        return min(mins), max(maxs)
+    def get_family_age_ranges(self, found_people):
+        """Zwraca zakres wieku (min/max) dla każdej kategorii rodzin (arkuszy)."""
+        # Założenie: found_people zawiera 'file_path' i 'wiek' dla każdej osoby
+        from collections import defaultdict
+        family_ages = defaultdict(list)
+        for person in found_people:
+            fp = person.get('file_path')
+            wiek = person.get('wiek')
+            if fp and wiek is not None:
+                try:
+                    family_ages[fp].append(int(wiek))
+                except Exception:
+                    pass
+        # Podział na kategorie
+        ranges = {1: [], 2: [], 3: [], 4: []}
+        for ages in family_ages.values():
+            size = len(ages)
+            if size == 1:
+                ranges[1].append((min(ages), max(ages)))
+            elif size == 2:
+                ranges[2].append((min(ages), max(ages)))
+            elif 3 <= size <= 4:
+                ranges[3].append((min(ages), max(ages)))
+            elif size >= 5:
+                ranges[4].append((min(ages), max(ages)))
+        # Zwróć min/max dla każdej kategorii
+        def minmax(lst):
+            if not lst:
+                return None, None
+            mins = [x[0] for x in lst]
+            maxs = [x[1] for x in lst]
+            return min(mins), max(maxs)
         return {
             'family_1': minmax(ranges[1]),
             'family_2': minmax(ranges[2]),
