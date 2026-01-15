@@ -37,13 +37,14 @@ class Statistics:
                     return None, None
                 mins = [x[0] for x in lst]
                 maxs = [x[1] for x in lst]
-                return min(mins), max(maxs)
-            return {
-                'family_1': minmax(ranges[1]),
-                'family_2': minmax(ranges[2]),
-                'family_3_4': minmax(ranges[3]),
-                'family_5plus': minmax(ranges[4])
-            }
+        return min(mins), max(maxs)
+        return {
+            'family_1': minmax(ranges[1]),
+            'family_2': minmax(ranges[2]),
+            'family_3_4': minmax(ranges[3]),
+            'family_5plus': minmax(ranges[4])
+        }
+
     def add_family_by_size(self, size):
         """Dodaje rodzinę (arkusz) do odpowiedniej kategorii wielkości."""
         if size == 1:
