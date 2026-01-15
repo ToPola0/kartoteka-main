@@ -6,14 +6,16 @@ from collections import defaultdict
 
 
 class Statistics:
-    def update_family_stats(self, people_list):
-        """Aktualizuje statystyki rodzin na podstawie listy osób."""
-        from families_counter import count_families
-        result = count_families(people_list)
-        self.family_count_1 = result['family_count_1']
-        self.family_count_2 = result['family_count_2']
-        self.family_count_3_4 = result['family_count_3_4']
-        self.family_count_5plus = result['family_count_5plus']
+    def add_family_by_size(self, size):
+        """Dodaje rodzinę (arkusz) do odpowiedniej kategorii wielkości."""
+        if size == 1:
+            self.family_count_1 += 1
+        elif size == 2:
+            self.family_count_2 += 1
+        elif 3 <= size <= 4:
+            self.family_count_3_4 += 1
+        elif size >= 5:
+            self.family_count_5plus += 1
     
     def __init__(self):
         self.names_counter = defaultdict(int)

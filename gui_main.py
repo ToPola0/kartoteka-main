@@ -1361,6 +1361,8 @@ class MainWindow:
                         plec = person.get("plec", "")
                         plec_str = "K" if plec == "K" else "M"
                         analysis_details.append((f"      - {imie} {nazwisko}, wiek: {wiek}, płeć: {plec_str}\n", None, None))
+                    # Dodaj rodzinę na podstawie liczby osób w arkuszu
+                    self.statistics.add_family_by_size(len(sheet_people))
 
             total_k += file_k
             total_m += file_m
@@ -1381,7 +1383,7 @@ class MainWindow:
             final_summary_lines.append(f"[RESULT] Wszystkie nieznane imiona wyświetlono w wynikach.\n")
 
         # Zakończ zbieranie statystyk
-        self.statistics.update_family_stats(self.found_people)
+        # self.statistics.update_family_stats(self.found_people)  # Już niepotrzebne, rodziny liczone na bieżąco
         self.statistics.end_analysis()
         
         # Usuń komunikat analizy i wstaw wyniki
