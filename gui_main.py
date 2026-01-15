@@ -1068,17 +1068,10 @@ class MainWindow:
         for filename in os.listdir(self.folder_path):
             if filename.startswith("~$") or not filename.lower().endswith((".xls", ".xlsx")):
                 continue
-            file_path = os.path.join(self.folder_path, filename)
-            # Pomijaj plik wzór.xlsx/wzor.xlsx w statystykach, ale wypisz w wynikach
-            is_template = filename.lower() in ["wzór.xlsx", "wzor.xlsx"]
-            analysis_details.append((f"[INFO] Analiza pliku: {filename}\n", "link", file_path))
-            if is_template:
-                # Wypisz, ale nie licz w statystykach
-                analysis_details.append((f"  [INFO] Plik {filename} jest wzorcem i nie jest liczony w statystykach.\n", "info", None))
-                # Dodaj podsumowanie pliku do bufora z zerami
-                analysis_details.append((f"  [INFO] Wynik dla pliku: Kobiety=0, Mężczyźni=0\n", "bold", None))
-                analysis_details.append(("-"*50 + "\n", None, None))
+            if filename.lower() in ["wzór.xlsx", "wzor.xlsx"]:
                 continue
+            file_path = os.path.join(self.folder_path, filename)
+            analysis_details.append((f"[INFO] Analiza pliku: {filename}\n", "link", file_path))
             scanned_files_count += 1
             self.statistics.add_file()  # Zlicz plik
             # ...existing code...
