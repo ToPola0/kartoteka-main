@@ -1071,7 +1071,8 @@ class MainWindow:
             if filename.lower() in ["wzór.xlsx", "wzor.xlsx"]:
                 continue
             file_path = os.path.join(self.folder_path, filename)
-            analysis_details.append((f"[INFO] Analiza pliku: {filename}\n", "link", file_path))
+            lp = scanned_files_count + 1
+            analysis_details.append((f"{lp}. [INFO] Analiza pliku: {filename}\n", "link", file_path))
             scanned_files_count += 1
             self.statistics.add_file()  # Zlicz plik
             # ...existing code...
