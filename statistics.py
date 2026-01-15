@@ -249,7 +249,7 @@ class Statistics:
         text += f"  Srednio arkuszy na plik:     {self._avg(summary['sheets_scanned'], summary['files_scanned']):>5}\n\n"
 
         # PODZIAŁ RODZIN
-        text += "Podział rodzin:\n"
+        text += "PODZIAŁ RODZIN:\n"
         text += f"  Rodziny 1-osobowe: {summary['family_count_1']:02d}\n"
         text += f"  Rodziny 2-osobowe: {summary['family_count_2']:02d}\n"
         text += f"  Rodziny 3–4-osobowe: {summary['family_count_3_4']:02d}\n"
