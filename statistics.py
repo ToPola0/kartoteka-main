@@ -264,11 +264,11 @@ class Statistics:
                 "family_count_5plus": self.family_count_5plus
         }
     
-    def format_statistics(self):
+    def format_statistics(self, found_people):
         """Formatuje statystyki do czytelnego tekstu z dekadami."""
         from datetime import date
         summary = self.get_summary()
-        age_ranges = self.get_family_age_ranges(self.found_people)
+        age_ranges = self.get_family_age_ranges(found_people)
         duration = summary["analysis_duration"]
 
         text = "\n"

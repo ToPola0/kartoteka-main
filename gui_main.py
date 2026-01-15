@@ -872,7 +872,7 @@ class MainWindow:
 
     def show_statistics(self):
         """Wyświetla okno ze statystykami z kolorowymi elementami i filtrowaniem po imieniu/nazwisku."""
-        stats_text = self.statistics.format_statistics()
+        stats_text = self.statistics.format_statistics(self.found_people)
 
         # Utwórz nowe okno dla statystyk
         stats_window = tk.Toplevel(self.root)
