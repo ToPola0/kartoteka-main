@@ -6,6 +6,44 @@ from collections import defaultdict
 
 
 class Statistics:
+        def get_family_age_ranges(self, found_people):
+            """Zwraca zakres wieku (min/max) dla każdej kategorii rodzin (arkuszy)."""
+            # Założenie: found_people zawiera 'file_path' i 'wiek' dla każdej osoby
+            from collections import defaultdict
+            family_ages = defaultdict(list)
+            for person in found_people:
+                fp = person.get('file_path')
+                wiek = person.get('wiek')
+                if fp and wiek is not None:
+                    try:
+                        family_ages[fp].append(int(wiek))
+                    except Exception:
+                        pass
+            # Podział na kategorie
+            ranges = {1: [], 2: [], 3: [], 4: []}
+            for ages in family_ages.values():
+                size = len(ages)
+                if size == 1:
+                    ranges[1].append((min(ages), max(ages)))
+                elif size == 2:
+                    ranges[2].append((min(ages), max(ages)))
+                elif 3 <= size <= 4:
+                    ranges[3].append((min(ages), max(ages)))
+                elif size >= 5:
+                    ranges[4].append((min(ages), max(ages)))
+            # Zwróć min/max dla każdej kategorii
+            def minmax(lst):
+                if not lst:
+                    return None, None
+                mins = [x[0] for x in lst]
+                maxs = [x[1] for x in lst]
+                return min(mins), max(maxs)
+            return {
+                'family_1': minmax(ranges[1]),
+                'family_2': minmax(ranges[2]),
+                'family_3_4': minmax(ranges[3]),
+                'family_5plus': minmax(ranges[4])
+            }
     def add_family_by_size(self, size):
         """Dodaje rodzinę (arkusz) do odpowiedniej kategorii wielkości."""
         if size == 1:
@@ -229,6 +267,7 @@ class Statistics:
         """Formatuje statystyki do czytelnego tekstu z dekadami."""
         from datetime import date
         summary = self.get_summary()
+        age_ranges = self.get_family_age_ranges(self.found_people)
         duration = summary["analysis_duration"]
 
         text = "\n"
@@ -250,10 +289,14 @@ class Statistics:
 
         # PODZIAŁ RODZIN
         text += "PODZIAŁ RODZIN:\n"
-        text += f"  Rodziny 1-osobowe: {summary['family_count_1']:02d}\n"
-        text += f"  Rodziny 2-osobowe: {summary['family_count_2']:02d}\n"
-        text += f"  Rodziny 3–4-osobowe: {summary['family_count_3_4']:02d}\n"
-        text += f"  Rodziny 5+-osobowe: {summary['family_count_5plus']:02d}\n\n"
+        min1, max1 = age_ranges['family_1']
+        min2, max2 = age_ranges['family_2']
+        min34, max34 = age_ranges['family_3_4']
+        min5, max5 = age_ranges['family_5plus']
+        text += f"  Rodziny 1-osobowe: {summary['family_count_1']:02d} (wiek: {min1 if min1 is not None else '-'}–{max1 if max1 is not None else '-'})\n"
+        text += f"  Rodziny 2-osobowe: {summary['family_count_2']:02d} (wiek: {min2 if min2 is not None else '-'}–{max2 if max2 is not None else '-'})\n"
+        text += f"  Rodziny 3–4-osobowe: {summary['family_count_3_4']:02d} (wiek: {min34 if min34 is not None else '-'}–{max34 if max34 is not None else '-'})\n"
+        text += f"  Rodziny 5+-osobowe: {summary['family_count_5plus']:02d} (wiek: {min5 if min5 is not None else '-' }–{max5 if max5 is not None else '-'})\n\n"
         # URODZINY W DEKADACH
         if summary['birth_decades']:
             text += "URODZINY W DEKADACH (od najstarszych):\n"
