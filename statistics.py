@@ -6,7 +6,14 @@ from collections import defaultdict
 
 
 class Statistics:
-    """Klasa do zbierania i przetwarzania statystyk z kartoteki."""
+    def update_family_stats(self, people_list):
+        """Aktualizuje statystyki rodzin na podstawie listy osób."""
+        from families_counter import count_families
+        result = count_families(people_list)
+        self.family_count_1 = result['family_count_1']
+        self.family_count_2 = result['family_count_2']
+        self.family_count_3_4 = result['family_count_3_4']
+        self.family_count_5plus = result['family_count_5plus']
     
     def __init__(self):
         self.names_counter = defaultdict(int)
@@ -41,6 +48,11 @@ class Statistics:
         self.marriage_decades = defaultdict(int)  # Dekady ślubów
         self.ages = []  # Lista wszystkich wieków do obliczeń statystycznych
         self.names_counter.clear()  # Czyszczenie licznika imion
+        # Podział rodzin
+        self.family_count_1 = 0
+        self.family_count_2 = 0
+        self.family_count_3_4 = 0
+        self.family_count_5plus = 0
     
     def start_analysis(self):
         """Rozpoczyna pomiar czasu analizy."""
@@ -48,8 +60,9 @@ class Statistics:
         self.analysis_start_time = datetime.now()
     
     def end_analysis(self):
-        """Kończy pomiar czasu analizy."""
+        """Kończy pomiar czasu analizy i zlicza rodziny po adresach."""
         self.analysis_end_time = datetime.now()
+        # Nie nadpisuj liczników rodzin, są ustawiane przez update_family_stats
     
     def get_analysis_duration(self):
         """Zwraca czas trwania analizy."""
@@ -203,31 +216,42 @@ class Statistics:
             "age_median": age_stats["median"],
             "age_min": age_stats["min"],
             "age_max": age_stats["max"],
-            "analysis_duration": self.get_analysis_duration()
+                "analysis_duration": self.get_analysis_duration(),
+                "family_count_1": self.family_count_1,
+                "family_count_2": self.family_count_2,
+                "family_count_3_4": self.family_count_3_4,
+                "family_count_5plus": self.family_count_5plus
         }
     
     def format_statistics(self):
         """Formatuje statystyki do czytelnego tekstu z dekadami."""
+        from datetime import date
         summary = self.get_summary()
         duration = summary["analysis_duration"]
-        
+
         text = "\n"
         text += "=" * 78 + "\n"
         text += "                    STATYSTYKI ANALIZY                      \n"
         text += "=" * 78 + "\n\n"
-        
+
         # LUDZIE
         text += "LUDZIE:\n"
         text += f"  Wszystkie osoby:   {summary['total_people']:>5}\n"
         text += f"  Kobiety:           {summary['total_females']:>5} ({self._percentage(summary['total_females'], summary['total_people']):>5.1f}%)\n"
         text += f"  Mezczyzni:         {summary['total_males']:>5} ({self._percentage(summary['total_males'], summary['total_people']):>5.1f}%)\n\n"
-        
+
         # PLIKI
         text += "PLIKI I ARKUSZE:\n"
         text += f"  Przeskanowane pliki:         {summary['files_scanned']:>5}\n"
         text += f"  Przeskanowane arkusze:       {summary['sheets_scanned']:>5}\n"
         text += f"  Srednio arkuszy na plik:     {self._avg(summary['sheets_scanned'], summary['files_scanned']):>5}\n\n"
-        
+
+        # PODZIAŁ RODZIN
+        text += "Podział rodzin:\n"
+        text += f"  Rodziny 1-osobowe: {summary['family_count_1']:02d}\n"
+        text += f"  Rodziny 2-osobowe: {summary['family_count_2']:02d}\n"
+        text += f"  Rodziny 3–4-osobowe: {summary['family_count_3_4']:02d}\n"
+        text += f"  Rodziny 5+-osobowe: {summary['family_count_5plus']:02d}\n\n"
         # URODZINY W DEKADACH
         if summary['birth_decades']:
             text += "URODZINY W DEKADACH (od najstarszych):\n"
@@ -237,7 +261,7 @@ class Statistics:
                 bar = self._create_bar(percentage, width=30)
                 text += f"  {decade}s: {count:>4} osob  {bar} {percentage:>5.1f}%\n"
             text += "\n"
-        
+
         # SLUBY W DEKADACH
         if summary['marriage_decades']:
             text += "SLUBY W DEKADACH (od najstarszych):\n"
@@ -248,7 +272,7 @@ class Statistics:
                 bar = self._create_bar(percentage, width=30)
                 text += f"  {decade}s: {count:>4} slubow {bar} {percentage:>5.1f}%\n"
             text += "\n"
-        
+
         # ROZKLAD WIEKU
         text += "ROZKLAD WIEKU:\n"
         text += f"  Srednia wieku:              {summary['age_average']:>5.1f} lat\n"
@@ -261,7 +285,7 @@ class Statistics:
             bar = self._create_bar(percentage, width=30)
             text += f"    {age_group:>6} lat: {count:>4} osob  {bar} {percentage:>5.1f}%\n"
         text += "\n"
-        
+
         # TOP 20 IMION
         if self.names_counter:
             text += "TOP 20 IMION:\n"
@@ -279,26 +303,32 @@ class Statistics:
         text += "ADRESY:\n"
         text += f"  Unikalne adresy:             {summary['unique_addresses']:>5}\n"
         text += f"  Srednio osob na adres:       {self._avg(summary['total_people'], summary['unique_addresses']):>5}\n\n"
-        
+
         # JUBILEUSZE
         text += "JUBILEUSZE I SLUBY:\n"
         text += f"  Nadchodzace jubileusze:      {summary['jubilees_count']:>5}\n"
         text += f"  Sluby w zakresie lat:        {summary['marriages_in_range_count']:>5}\n\n"
-        
+
         # PROBLEMY
         text += "PROBLEMY:\n"
         text += f"  Bledy:                       {summary['errors_count']:>5}\n"
         text += f"  Ostrzezenia:                 {summary['warnings_count']:>5}\n"
         text += f"  Nieznane imiona:             {summary['unknown_names_count']:>5}\n\n"
-        
+
         # CZAS
         text += "CZAS ANALIZY:\n"
         text += f"  Czas trwania:           {duration:>8.2f} sekund\n"
         if summary['files_scanned'] > 0:
             text += f"  Sredni czas na plik:    {duration/summary['files_scanned']:>8.2f} s\n"
-        
+
+        # Dni do końca roku
+        today = date.today()
+        end_of_year = date(today.year, 12, 31)
+        days_left = (end_of_year - today).days
+        text += f"\nDNI DO KOŃCA ROKU: {days_left:03d}\n"
+
         text += "\n" + "=" * 78 + "\n"
-        
+
         return text
     
     def _percentage(self, part, total):

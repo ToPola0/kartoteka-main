@@ -81,7 +81,7 @@ class MainWindow:
         self.search_index = None
     def __init__(self, root):
         self.root = root
-        self.root.title("Kartoteka Parafialna Przyborów - System Zarządzania v3.1")
+        self.root.title("Kartoteka Parafialna Przyborów - System Zarządzania v3.2")
         self.root.geometry("1100x700")  # Domyślny rozmiar - pozycja zostanie ustawiona później
         
         # Ustaw minimalny rozmiar okna
@@ -90,42 +90,74 @@ class MainWindow:
         # Kolor tła
         self.root.configure(bg=COLORS["background"])
         
-        # Ustaw ikonę okna - DEBUGOWANIE
+        # Ustaw ikonę okna (Windows: .ico na pasku, Tkinter: logo.png w GUI)
+        debug_msgs = []
         try:
             import sys
             from PIL import Image, ImageTk
-            
-            # Znajdź folder z zasobami
+
             if getattr(sys, 'frozen', False):
-                # PyInstaller
-                base_dir = sys._MEIPASS
+                exe_dir = os.path.dirname(sys.executable)
+                meipass = getattr(sys, '_MEIPASS', None)
+                # Najpierw katalog EXE, potem _MEIPASS/_internal
+                base_dirs = [exe_dir]
+                if meipass and meipass != exe_dir:
+                    base_dirs.append(meipass)
+                # Dodatkowo _internal jeśli istnieje
+                internal_dir = os.path.join(exe_dir, '_internal')
+                if os.path.isdir(internal_dir):
+                    base_dirs.append(internal_dir)
             else:
-                base_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            # Spróbuj załadować logo.png
-            logo_path = os.path.join(base_dir, "logo.png")
-            print(f"[DEBUG] Szukam logo w: {logo_path}")
-            print(f"[DEBUG] Czy plik istnieje: {os.path.exists(logo_path)}")
-            
-            if os.path.exists(logo_path):
-                icon_image = Image.open(logo_path)
-                icon_photo = ImageTk.PhotoImage(icon_image)
-                self.root.iconphoto(True, icon_photo)
-                print("[DEBUG] Logo załadowane POMYŚLNIE")
-            else:
-                # Listuj pliki w katalogu
-                print(f"[DEBUG] Pliki w {base_dir}:")
+                base_dirs = [os.path.dirname(os.path.abspath(__file__))]
+
+            debug_msgs.append(f"[DEBUG] base_dirs: {base_dirs}")
+
+            # Ikona na pasku Windows (.ico)
+            ico_path = None
+            for d in base_dirs:
+                if d:
+                    p = os.path.join(d, "logo.ico")
+                    debug_msgs.append(f"[DEBUG] Szukam logo.ico: {p}")
+                    if os.path.exists(p):
+                        ico_path = p
+                        debug_msgs.append(f"[DEBUG] Znalazłem logo.ico: {p}")
+                        break
+            if ico_path:
                 try:
-                    for f in os.listdir(base_dir):
-                        if f.endswith('.png') or f.endswith('.ico'):
-                            print(f"  - {f}")
-                except:
-                    pass
-                print("[DEBUG] BŁĄD: logo.png nie istnieje")
+                    self.root.iconbitmap(ico_path)
+                    debug_msgs.append(f"[DEBUG] Ikona .ico ustawiona: {ico_path}")
+                except Exception as e:
+                    debug_msgs.append(f"[DEBUG] Błąd ustawiania .ico: {e}")
+            else:
+                debug_msgs.append(f"[DEBUG] Nie znaleziono logo.ico w {base_dirs}")
+
+            # Ikona w GUI (logo.png)
+            logo_path = None
+            for d in base_dirs:
+                if d:
+                    p = os.path.join(d, "logo.png")
+                    debug_msgs.append(f"[DEBUG] Szukam logo.png: {p}")
+                    if os.path.exists(p):
+                        logo_path = p
+                        debug_msgs.append(f"[DEBUG] Znalazłem logo.png: {p}")
+                        break
+            if logo_path:
+                try:
+                    icon_image = Image.open(logo_path)
+                    self.icon_photo = ImageTk.PhotoImage(icon_image)
+                    self.root.iconphoto(True, self.icon_photo)
+                    debug_msgs.append(f"[DEBUG] Logo.png ustawione jako iconphoto: {logo_path}")
+                    # Usunięto testowy label, logo.png przypisane do self.icon_photo
+                except Exception as e:
+                    debug_msgs.append(f"[DEBUG] Błąd ustawiania logo.png: {e}")
+            else:
+                debug_msgs.append(f"[DEBUG] Nie znaleziono logo.png w {base_dirs}")
         except Exception as e:
-            print(f"[DEBUG] Wyjątek podczas ładowania logo: {e}")
+            debug_msgs.append(f"[DEBUG] Wyjątek podczas ustawiania ikon: {e}")
             import traceback
-            traceback.print_exc()
+            debug_msgs.append(traceback.format_exc())
+
+        # Usunięto okno debug
 
         self.found_people = []
         self.names_dict = {}
@@ -219,7 +251,7 @@ class MainWindow:
         # Dodaj logo na górze
         try:
             from PIL import Image, ImageTk
-            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo przeżroczyste.png")
+            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
             
             if os.path.exists(logo_path):
                 logo_image = Image.open(logo_path)
@@ -785,9 +817,11 @@ class MainWindow:
 
     def analyze_current_settings(self, show_dialog=False):
         """Analizuje z bieżącymi ustawieniami."""
+        print(f"[DEBUG] analyze_current_settings: wywołano (show_dialog={show_dialog}) o {datetime.now()}")
         if not self.folder_path:
             folder = filedialog.askdirectory(title="Wybierz folder z plikami Excel")
             if not folder:
+                print("[DEBUG] analyze_current_settings: przerwano, brak folderu")
                 return
             self.folder_path = folder
 
@@ -822,15 +856,18 @@ class MainWindow:
 
     def schedule_reanalysis(self, delay=500):
         """Harmonogramuje ponowną analizę."""
+        # DEBUG: logowanie wywołania i flagi loading_settings
+        print(f"[DEBUG] Wywołano schedule_reanalysis (delay={delay}), loading_settings={self.loading_settings}, czas={datetime.now()}")
         # Nie uruchamiaj podczas ładowania ustawień
         if self.loading_settings:
+            print("[DEBUG] schedule_reanalysis przerwane: loading_settings=True")
             return
-            
         if self.refresh_after_id is not None:
             try:
                 self.root.after_cancel(self.refresh_after_id)
             except (ValueError, tk.TclError):
                 pass  # ID już nieważne
+        print("[DEBUG] Zaplanowano analyze_current_settings przez after")
         self.refresh_after_id = self.root.after(delay, lambda: self.analyze_current_settings(show_dialog=False))
 
     def show_statistics(self):
@@ -875,15 +912,9 @@ class MainWindow:
             insertbackground="#ECF0F1"
         )
         stats_text_widget.pack(fill="both", expand=True)
-
-
-        # Przyciski akcji i panel filtrowania na dole
+        # Przyciski akcji
         bottom_frame = tk.Frame(stats_window, bg="#1E1E1E")
         bottom_frame.pack(fill="x", side="bottom", pady=(0, 15))
-
-        # (Usunięto panel filtrowania imię/nazwisko)
-
-        # Przyciski akcji
         buttons_frame = tk.Frame(bottom_frame, bg="#1E1E1E")
         buttons_frame.pack()
         # Przycisk zapisz pełny raport (osoby + statystyki + jubileusze + śluby)
@@ -1033,14 +1064,24 @@ class MainWindow:
         if jubilee_days is None:
             jubilee_days = self.jubilee_days_var.get()
 
+
         for filename in os.listdir(self.folder_path):
             if filename.startswith("~$") or not filename.lower().endswith((".xls", ".xlsx")):
                 continue
+            file_path = os.path.join(self.folder_path, filename)
+            # Pomijaj plik wzór.xlsx/wzor.xlsx w statystykach, ale wypisz w wynikach
+            is_template = filename.lower() in ["wzór.xlsx", "wzor.xlsx"]
+            analysis_details.append((f"[INFO] Analiza pliku: {filename}\n", "link", file_path))
+            if is_template:
+                # Wypisz, ale nie licz w statystykach
+                analysis_details.append((f"  [INFO] Plik {filename} jest wzorcem i nie jest liczony w statystykach.\n", "info", None))
+                # Dodaj podsumowanie pliku do bufora z zerami
+                analysis_details.append((f"  [INFO] Wynik dla pliku: Kobiety=0, Mężczyźni=0\n", "bold", None))
+                analysis_details.append(("-"*50 + "\n", None, None))
+                continue
             scanned_files_count += 1
             self.statistics.add_file()  # Zlicz plik
-            file_path = os.path.join(self.folder_path, filename)
-
-            analysis_details.append((f"[INFO] Analiza pliku: {filename}\n", "link", file_path))
+            # ...existing code...
 
             try:
                 xl = pd.ExcelFile(file_path)
@@ -1340,6 +1381,7 @@ class MainWindow:
             final_summary_lines.append(f"[RESULT] Wszystkie nieznane imiona wyświetlono w wynikach.\n")
 
         # Zakończ zbieranie statystyk
+        self.statistics.update_family_stats(self.found_people)
         self.statistics.end_analysis()
         
         # Usuń komunikat analizy i wstaw wyniki
@@ -1437,7 +1479,7 @@ class MainWindow:
                 self.edit_unknown_btn = tk.Button(
                     self.analysis_section, 
                     text=f"✏️ Edytuj nieznane ({len(all_unknown)})", 
-                    command=lambda: edit_unknown_name(all_unknown, self.names_dict, self.folder_path, self.result_text),
+                    command=lambda: edit_unknown_name(all_unknown, self.names_dict, self.folder_path, self.result_text, self),
                     **edit_btn_style
                 )
                 self.edit_unknown_btn.pack(fill="x", pady=(6, 0))

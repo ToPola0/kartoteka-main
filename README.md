@@ -1,4 +1,4 @@
-# Kartoteka Parafialna - System Zarządzania v3.1
+# Kartoteka Parafialna - System Zarządzania v3.2
 
 ![Status](https://img.shields.io/badge/status-active-success.svg)
 ![Version](https://img.shields.io/badge/version-2.0-blue.svg)
@@ -213,7 +213,7 @@ Kartoteka/
 - 💅 Dodano ikony i emoji w interfejsie
 - 🐛 Naprawiono błąd zamykania okna wyników
 
-### v3.1 (Styczeń 2026)
+### v3.2 (Styczeń 2026)
 - Pierwsza wersja z GUI
 - Podstawowe funkcje analizy
 

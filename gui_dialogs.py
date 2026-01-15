@@ -72,7 +72,7 @@ def open_excel_file_for_editing(selected_name, locations, folder_path):
     tk.Button(edit_window, text="Otwórz plik do edycji", command=open_selected_file).pack(pady=10)
     tk.Button(edit_window, text="Zamknij", command=edit_window.destroy).pack(pady=5)
 
-def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
+def edit_unknown_name(all_unknown, names_dict, folder_path, result_text, main_window=None):
     """Okno do edycji nieznanych imion."""
     if not all_unknown:
         messagebox.showinfo("Brak nieznanych imion", "Nie znaleziono nieznanych imion do edycji.")
@@ -82,6 +82,7 @@ def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
     edit_window.title("Edytuj nieznane imię")
     edit_window.geometry("800x550")
     edit_window.configure(bg="#ECF0F1")
+    edit_window.attributes("-topmost", True)
     
     # Nagłówek
     header = tk.Frame(edit_window, bg="#2C3E50", height=60)
@@ -124,8 +125,12 @@ def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
     unknown_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-    for name in list(all_unknown.keys()):
-        unknown_listbox.insert(tk.END, name)
+    def refresh_unknown_listbox():
+        unknown_listbox.delete(0, tk.END)
+        for name in list(all_unknown.keys()):
+            unknown_listbox.insert(tk.END, name)
+
+    refresh_unknown_listbox()
 
     # Prawy panel - formularz edycji
     right_frame = tk.Frame(content, bg="#ECF0F1", width=280)
@@ -224,10 +229,20 @@ def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
 
         if selected_name in all_unknown:
             del all_unknown[selected_name]
-        unknown_listbox.delete(selected_index)
+        refresh_unknown_listbox()
         corrected_name_entry.delete(0, tk.END)
         info_label.config(text=f"Imię '{selected_name}' poprawione.")
-        messagebox.showinfo("Sukces", f"Imię '{selected_name}' zostało poprawione na '{corrected_name_fmt}'.")
+        messagebox.showinfo("Sukces", f"Imię '{selected_name}' zostało poprawione na '{corrected_name_fmt}'.", parent=edit_window)
+        # Przywróć okno edycji na wierzch
+        edit_window.lift()
+        edit_window.focus_force()
+        print(f"[DEBUG] apply_correction: main_window={main_window}")
+        if main_window:
+            print("[DEBUG] apply_correction: wywołuję analyze_current_settings po poprawce imienia (natychmiast)")
+            main_window.analyze_current_settings(show_dialog=False)
+            # Przywróć okno edycji na wierzch po analizie
+            edit_window.lift()
+            edit_window.focus_force()
 
     def add_to_database():
         selected_index = unknown_listbox.curselection()
@@ -240,31 +255,58 @@ def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
         gender = gender_var.get()
         names_dict[remove_diacritics(key_name).strip().lower()] = gender
 
-        # Domyślna ścieżka to folder z plikami Excel
+        # Domyślna ścieżka do pliku imiona.json
         default_json_path = os.path.join(folder_path, "imiona.json") if folder_path else "imiona.json"
-        
-        save_path = filedialog.asksaveasfilename(
-            title="Zapisz/wybierz plik JSON z imionami", 
-            defaultextension=".json", 
-            filetypes=[("JSON", "*.json")],
-            initialdir=folder_path if folder_path else None,
-            initialfile="imiona.json"
-        )
-        if save_path:
-            if save_names_to_json({key_name: gender}, save_path):
-                result_text.insert(tk.END, f"[INFO] Dodano imię '{key_name}' jako '{gender}' do pliku: {save_path}\n")
+        zapisano = False
+        try:
+            if save_names_to_json({key_name: gender}, default_json_path):
+                result_text.insert(tk.END, f"[INFO] Dodano imię '{key_name}' jako '{gender}' do pliku: {default_json_path}\n")
+                zapisano = True
+                if main_window:
+                    print("[DEBUG] add_to_database: wywołuję analyze_current_settings po dodaniu imienia (natychmiast)")
+                    main_window.analyze_current_settings(show_dialog=False)
+                    edit_window.lift()
+                    edit_window.focus_force()
+        except Exception as e:
+            result_text.insert(tk.END, f"[ERROR] Nie udało się zapisać do pliku JSON: {e}\n")
+        if not zapisano:
+            # Jeśli nie udało się zapisać automatycznie, zapytaj użytkownika o plik
+            save_path = filedialog.asksaveasfilename(
+                title="Zapisz/wybierz plik JSON z imionami", 
+                defaultextension=".json", 
+                filetypes=[("JSON", "*.json")],
+                initialdir=folder_path if folder_path else None,
+                initialfile="imiona.json"
+            )
+            if save_path:
+                if save_names_to_json({key_name: gender}, save_path):
+                    result_text.insert(tk.END, f"[INFO] Dodano imię '{key_name}' jako '{gender}' do pliku: {save_path}\n")
+                    if main_window:
+                        print("[DEBUG] add_to_database: wywołuję analyze_current_settings po dodaniu imienia (natychmiast)")
+                        main_window.analyze_current_settings(show_dialog=False)
+                        edit_window.lift()
+                        edit_window.focus_force()
+                else:
+                    result_text.insert(tk.END, f"[ERROR] Nie udało się zapisać do pliku JSON\n")
+                    return
             else:
-                result_text.insert(tk.END, f"[ERROR] Nie udało się zapisać do pliku JSON\n")
-                return
-        else:
-            result_text.insert(tk.END, f"[INFO] Imię '{key_name}' dodano do bieżącej sesji (nie zapisano do pliku).\n")
+                result_text.insert(tk.END, f"[INFO] Imię '{key_name}' dodano do bieżącej sesji (nie zapisano do pliku).\n")
+                if main_window:
+                    print("[DEBUG] add_to_database: wywołuję analyze_current_settings po dodaniu imienia (natychmiast)")
+                    main_window.analyze_current_settings(show_dialog=False)
+                    edit_window.lift()
+                    edit_window.focus_force()
+        # Przywróć okno edycji na wierzch
+        edit_window.lift()
+        edit_window.focus_force()
+        print(f"[DEBUG] add_to_database: main_window={main_window}")
 
         if selected_name in all_unknown:
             del all_unknown[selected_name]
-        unknown_listbox.delete(selected_index)
+        refresh_unknown_listbox()
         corrected_name_entry.delete(0, tk.END)
         info_label.config(text=f"Imię '{key_name}' dodano do bazy jako '{gender}'.")
-        messagebox.showinfo("Sukces", f"Imię '{key_name}' dodano jako '{gender}' do bazy (pamięć sesji zaktualizowana).")
+        messagebox.showinfo("Sukces", f"Imię '{key_name}' dodano jako '{gender}' do bazy (pamięć sesji zaktualizowana).", parent=edit_window)
 
     # Przyciski akcji
     btn_style = {
@@ -297,8 +339,18 @@ def edit_unknown_name(all_unknown, names_dict, folder_path, result_text):
                        **btn_style)
     add_btn.pack(fill=tk.X, pady=(0, 8))
     
+    def close_and_reanalyze():
+        print(f"[DEBUG] close_and_reanalyze: main_window={main_window}")
+        if main_window:
+            main_window.loading_settings = False
+            print("[DEBUG] close_and_reanalyze: wywołuję analyze_current_settings bezpośrednio po zamknięciu okna")
+            main_window.analyze_current_settings(show_dialog=False)
+        else:
+            print("[DEBUG] close_and_reanalyze: main_window is None!")
+        edit_window.destroy()
+
     close_btn = tk.Button(btn_frame, text="❌ Zamknij", 
-                         command=edit_window.destroy,
+                         command=close_and_reanalyze,
                          bg="#95A5A6",
                          fg="white",
                          activebackground="#7F8C8D",

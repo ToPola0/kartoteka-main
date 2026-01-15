@@ -38,29 +38,32 @@ logging.basicConfig(
 
 def load_application_with_splash():
     """Ładuje aplikację z profesjonalnym ekranem powitalnym."""
-    # Utwórz tymczasowe okno root dla splash screen
-    splash_root = tk.Tk()
-    splash_root.withdraw()  # Ukryj główne okno
+    # Utwórz główne okno root
+    root = tk.Tk()
+    root.withdraw()  # Ukryj główne okno na czas splash
     from config import set_window_icon
-    set_window_icon(splash_root)
-    
+    set_window_icon(root)
+
     # Ścieżka do logo
     import sys
     if getattr(sys, 'frozen', False):
-        base_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+        base_dirs = [getattr(sys, '_MEIPASS', None), os.path.dirname(sys.executable)]
     else:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(base_dir, "logo.png")
-    if not os.path.exists(logo_path):
-        logo_path = None
-    
+        base_dirs = [os.path.dirname(os.path.abspath(__file__))]
+    logo_path = None
+    for d in base_dirs:
+        if d:
+            p = os.path.join(d, "logo.png")
+            if os.path.exists(p):
+                logo_path = p
+                break
     # Utwórz i wyświetl splash screen
     splash = SplashScreen(
-        parent=None,
+        parent=root,
         logo_path=logo_path,
         title="Kartoteka Parafialna",
         subtitle="System Zarządzania i Analizy",
-        version="v3.1"
+        version="v3.2"
     )
     splash.show()
     
@@ -77,17 +80,26 @@ def load_application_with_splash():
         splash.update_progress(progress, step_text)
         time.sleep(duration)
     
+
+    # Przywróć napisy statusu ładowania
+    loading_steps = [
+        ("Ładowanie konfiguracji...", 0.7),
+        ("Ładowanie słownika imion...", 1.0),
+        ("Przygotowanie interfejsu graficznego...", 1.0),
+        ("Finalizacja uruchamiania...", 0.7),
+    ]
+    for i, (step_text, duration) in enumerate(loading_steps):
+        progress = int((i / len(loading_steps)) * 100)
+        splash.update_progress(progress, step_text)
+        splash.root.update()  # Wymuś odświeżenie GUI
+        time.sleep(duration)
     splash.update_progress(100, "Gotowe!")
-    time.sleep(0.3)
-    
+    splash.root.update()
+    time.sleep(0.7)
+
     # Zamknij splash screen
     splash.close()
-    splash_root.destroy()
-    
-    # Utwórz główne okno aplikacji
-    root = tk.Tk()
-    from config import set_window_icon
-    set_window_icon(root)
+    root.deiconify()  # Pokaż główne okno
     app = MainWindow(root)
     return root, app
 

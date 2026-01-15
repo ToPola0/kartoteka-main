@@ -67,24 +67,28 @@ def save_settings(settings):
 def set_window_icon(window):
     """Ustawia niestandardową ikonę okna (zamiast domyślnej ikony Pythona)."""
     try:
-        # Szukaj plików .ico w kolejności: logo.ico, icon.ico
+        # Debug: pokaż gdzie szukamy ikon
+        print(f"[DEBUG] set_window_icon: BASE_DIR={BASE_DIR}")
         icon_files = ["logo.ico", "icon.ico"]
-        
         for icon_name in icon_files:
             icon_path = os.path.join(BASE_DIR, icon_name)
+            print(f"[DEBUG] set_window_icon: sprawdzam {icon_path}")
             if os.path.exists(icon_path):
-                window.iconbitmap(icon_path)
-                return
-        
+                try:
+                    window.iconbitmap(icon_path)
+                    print(f"[DEBUG] set_window_icon: ustawiono {icon_path}")
+                    return
+                except Exception as e:
+                    print(f"[DEBUG] set_window_icon: błąd ustawiania {icon_path}: {e}")
         # Jeśli nie ma pliku ico, użyj pustej ikony
         try:
             import tkinter as tk
-            # Tworzy małą przezroczystą ikonę
             img = tk.PhotoImage(width=1, height=1)
             img.blank()
             window.iconphoto(True, img)
-        except:
-            pass
+            print(f"[DEBUG] set_window_icon: ustawiono pustą ikonę")
+        except Exception as e:
+            print(f"[DEBUG] set_window_icon: błąd pustej ikony: {e}")
     except Exception as e:
-        logging.debug(f"Nie udało się zmienić ikony: {e}")
+        print(f"[DEBUG] set_window_icon: wyjątek główny: {e}")
 

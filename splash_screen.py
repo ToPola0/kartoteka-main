@@ -9,28 +9,40 @@ import time
 class SplashScreen:
     """Profesjonalny ekran powitalny z paskiem postępu."""
     
-    def __init__(self, parent=None, logo_path=None, title="Kartoteka Parafialna", 
-                 subtitle="System Zarządzania i Analizy", version="v3.1"):
+    def __init__(self, parent, logo_path=None, title="Kartoteka Parafialna", 
+                 subtitle="System Zarządzania i Analizy", version="v3.2"):
         """
         Inicjalizuje splash screen.
         
         Args:
-            parent: Rodzic okna (None dla toplevel)
+            parent: Rodzic okna (musi być root lub Toplevel)
             logo_path: Ścieżka do pliku logo
             title: Tytuł aplikacji
             subtitle: Podtytuł
             version: Wersja aplikacji
         """
-        self.root = tk.Toplevel(parent) if parent else tk.Tk()
+        # ZAWSZE korzystaj z przekazanego parent (root lub Toplevel)
+        if parent is None:
+            raise ValueError("SplashScreen wymaga przekazania parent (root)")
+        self.root = tk.Toplevel(parent)
         
         # Ustaw niestandardową ikonę
         try:
-            from config import set_window_icon
+            from config import set_window_icon, BASE_DIR
+            print(f"[DEBUG] SplashScreen BASE_DIR={BASE_DIR}")
             set_window_icon(self.root)
-        except:
-            pass
+        except Exception as e:
+            print(f"[DEBUG] SplashScreen: błąd set_window_icon: {e}")
         
         self.root.overrideredirect(True)  # Usuń ramkę okna
+        # Wymuś logo_path na logo.png z BASE_DIR jeśli nie podano
+        if logo_path is None:
+            try:
+                from config import BASE_DIR
+                logo_path = os.path.join(BASE_DIR, "logo.png")
+                print(f"[DEBUG] SplashScreen: wymuszam logo_path={logo_path}")
+            except Exception as e:
+                print(f"[DEBUG] SplashScreen: błąd ustalania logo_path: {e}")
         self.logo_path = logo_path
         self.title = title
         self.subtitle = subtitle
@@ -38,7 +50,7 @@ class SplashScreen:
         
         # Wymiary okna
         self.width = 600
-        self.height = 400
+        self.height = 440  # +40px na dolne napisy
         
         # Wycentruj okno
         screen_width = self.root.winfo_screenwidth()
@@ -111,41 +123,44 @@ class SplashScreen:
         separator = tk.Frame(self.main_frame, height=2, bg=self.accent_color)
         separator.pack(fill="x", padx=50, pady=(0, 30))
         
-        # Status label
-        self.status_label = tk.Label(self.main_frame, text="Inicjalizacja...",
-                                     font=("Segoe UI", 10),
-                                     bg=self.bg_color, fg=self.text_color)
-        self.status_label.pack(pady=(0, 15))
-        
+
         # Pasek postępu - modern style
         style = ttk.Style()
         style.theme_use('clam')
         style.configure("Splash.Horizontal.TProgressbar",
-                       troughcolor=self.bg_color,
-                       background=self.progress_color,
-                       darkcolor=self.progress_color,
-                       lightcolor=self.progress_color,
-                       bordercolor=self.accent_color,
-                       thickness=25)
-        
+                   troughcolor=self.bg_color,
+                   background=self.progress_color,
+                   darkcolor=self.progress_color,
+                   lightcolor=self.progress_color,
+                   bordercolor=self.accent_color,
+                   thickness=25)
+
+
+        # Najpierw elementy na samym dole (bez duplikatów)
+        self.status_label = tk.Label(self.main_frame, text="Inicjalizacja...",
+                                     font=("Segoe UI", 14, "bold"),
+                                     bg=self.bg_color, fg=self.accent_color)
+        self.status_label.pack(pady=(10, 10))
+
         self.progress = ttk.Progressbar(self.main_frame, 
                                        length=400,
                                        mode='determinate',
                                        style="Splash.Horizontal.TProgressbar")
-        self.progress.pack(pady=(0, 30))
-        
-        # Wersja na dole
+        self.progress.pack(side="bottom", pady=(0, 6))
+
+        copyright_label = tk.Label(self.main_frame, 
+                                  text="© 2026 Parafia Przyborów",
+                                  font=("Segoe UI", 7),
+                                  bg=self.bg_color, fg=self.text_color)
+        copyright_label.pack(side="bottom", pady=(0, 2))
+
         version_label = tk.Label(self.main_frame, text=self.version,
                                 font=("Segoe UI", 9),
                                 bg=self.bg_color, fg=self.text_color)
-        version_label.pack(side="bottom", pady=(0, 20))
+        version_label.pack(side="bottom", pady=(0, 8))
         
-        # Copyright
-        copyright_label = tk.Label(self.main_frame, 
-                                  text="© 2026 Parafia Przyborów",
-                                  font=("Segoe UI", 8),
-                                  bg=self.bg_color, fg=self.text_color)
-        copyright_label.pack(side="bottom", pady=(0, 5))
+
+        # (usunięto duplikaty version_label i copyright_label)
     
     def _create_text_logo(self):
         """Tworzy logo tekstowe jeśli brak pliku graficznego."""
@@ -155,6 +170,7 @@ class SplashScreen:
         logo_text.pack(pady=(40, 20))
     
     def update_progress(self, value, status_text=""):
+        print(f"[DEBUG] update_progress: value={value}, status_text='{status_text}'")
         """
         Aktualizuje pasek postępu.
         
